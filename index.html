@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0B5345" />
+  <title>Sistema Digital de Verificación de ORF Regional | DPI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Questrial&display=swap" rel="stylesheet">
+  <!-- SheetJS para lectura de libros de Excel de 37 hojas (.xlsx) y descarga de consolidados -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- BARRA SUPERIOR INSTITUCIONAL -->
+  <header class="portal-header">
+    <div class="portal-brand">
+      <div
+        class="portal-brand-icon"
+        title="Doble clic para herramientas de Administrador"
+        ondblclick="promptAdminUnlock()"
+      >🌲</div>
+      <div class="portal-brand-title">
+        Proyecto de Obligaciones de Repoblación Forestal · Dirección de Planificación Institucional
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <!-- Controles exclusivos para Administradora (sin el selector de portadas eliminado en Modificación 1) -->
+      <nav id="adminTopNav" class="admin-top-controls" aria-label="Controles de Administración">
+        <button type="button" id="navPortalBtn" class="nav-pill active" onclick="switchMainView('portal')">
+          📝 Vista Portal Regional
+        </button>
+        <button type="button" id="navAdminBtn" class="nav-pill" onclick="switchMainView('admin')">
+          📊 Panel de Control
+        </button>
+        <button type="button" class="nav-pill" onclick="openCloudConfigModal()">
+          ⚙️ Conexión Drive
+        </button>
+      </nav>
+
+      <button
+        type="button"
+        id="btnAdminToggleLock"
+        class="nav-pill"
+        style="font-size: 0.78rem; padding: 6px 11px; opacity: 0.85;"
+        onclick="promptAdminUnlock()"
+      >
+        🔒 Administrador
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       VISTA 1: PORTAL REGIONAL / SUBREGIONAL
+       ======================================================================== -->
+  <main id="viewPortal">
+
+    <!-- MODIFICACIÓN 1 (PDF 2): ÚNICA PORTADA CON FOTOGRAFÍA DE FONDO E INTEGRACIÓN ORGÁNICA -->
+    <section id="authSection" class="cover-hero">
+
+      <!-- LADO IZQUIERDO INTEGRADO ORGÁNICAMENTE CON EL FONDO DE BOSQUE -->
+      <div class="cover-left-pane">
+        <div class="organic-hero-content">
+          <div class="orf-organic-eyebrow">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3L4 15h6v6h4v-6h6L12 3z" fill="rgba(174, 213, 129, 0.28)" />
+            </svg>
+            <span>Sistema Digital de Verificación de ORF Regional</span>
+          </div>
+
+          <h1 class="organic-hero-title">
+            Control de Licencias sin <span>Información Digital</span> y Carga Geoespacial
+          </h1>
+
+          <div class="organic-divider"></div>
+
+          <p class="organic-hero-desc">
+            Plataforma digital para el control, verificación de estado y recopilación documental de licencias de aprovechamiento forestal sin información digital con acceso a nivel regional y subregional.
+          </p>
+        </div>
+      </div>
+
+      <!-- LADO DERECHO: MÓDULO DE INGRESO Y CREDENCIALES -->
+      <div class="cover-right-pane">
+        <div class="auth-card">
+          <div class="auth-card-head">
+            <h2>Ingreso Regional y Validación</h2>
+            <p>Complete sus datos e ingrese el código enviado a su correo institucional o personal</p>
+          </div>
+
+          <div class="auth-steps-indicator">
+            <div id="stepTab1" class="auth-step-tab active">1. Credenciales y Datos</div>
+            <div id="stepTab2" class="auth-step-tab">2. Código de Verificación (OTP)</div>
+          </div>
+
+          <!-- PASO 1: CREDENCIALES DE INGRESO -->
+          <div id="authStep1Body" class="auth-card-body">
+            <form id="loginStep1Form" class="form-grid" onsubmit="handleRequestOtp(event)">
+              <div class="form-row-2">
+                <div class="field-group">
+                  <label for="loginRegionUser">Usuario (Región): *</label>
+                  <select id="loginRegionUser" required onchange="handleRegionUserChange()">
+                    <option value="">Seleccione su Región</option>
+                  </select>
+                </div>
+                <div class="field-group">
+                  <label for="loginRegionPass">Contraseña (Regional): *</label>
+                  <input type="password" id="loginRegionPass" placeholder="Ingrese su contraseña" value="forestal2026" required />
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label for="loginSubregionSelect">Sede Subregional: *</label>
+                <select id="loginSubregionSelect" required>
+                  <option value="">Seleccione su Región primero...</option>
+                </select>
+              </div>
+
+              <div class="form-row-2">
+                <div class="field-group">
+                  <label for="loginPersonName">Nombre Completo del Responsable *</label>
+                  <input type="text" id="loginPersonName" placeholder="Ej. Ana María Gómez" required />
+                </div>
+                <div class="field-group">
+                  <label for="loginPersonRole">Puesto / Cargo *</label>
+                  <input type="text" id="loginPersonRole" placeholder="Ej. Técnica de Archivo Forestal" required />
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label for="loginPersonEmail">Correo Electrónico (recibirá código y constancia) *</label>
+                <input type="email" id="loginPersonEmail" placeholder="usuario@institucion.gob.gt" required />
+              </div>
+
+              <button type="submit" class="btn-primary">
+                📨 Enviar Código de Autenticación al Correo
+              </button>
+            </form>
+
+            <div id="adminLoginHintBox" class="admin-only-note">
+              <strong>🔑 Nota exclusiva para Administrador:</strong> Contraseña regional de prueba: <code>forestal2026</code>.
+            </div>
+          </div>
+
+          <!-- PASO 2: VALIDACIÓN DE CÓDIGO OTP -->
+          <div id="authStep2Body" class="auth-card-body" style="display: none;">
+            <form id="loginStep2Form" class="form-grid" onsubmit="handleVerifyOtp(event)">
+              <div style="padding: 12px 14px; border-radius: 9px; background: #EBF7F4; border-left: 4px solid var(--c-emerald); color: var(--c-pine); font-size: 0.86rem;">
+                Hemos enviado un código de autenticación de 6 dígitos a <strong id="otpTargetEmailDisplay"></strong>.
+                <div id="demoOtpCodeBanner" style="margin-top: 4px;"></div>
+              </div>
+
+              <div class="field-group">
+                <label for="otpInputCode">Código de Autenticación (6 dígitos) *</label>
+                <input
+                  type="text"
+                  id="otpInputCode"
+                  maxlength="6"
+                  placeholder="000000"
+                  required
+                  style="font-size: 1.5rem; letter-spacing: 0.35em; text-align: center; font-weight: 700;"
+                />
+              </div>
+
+              <div class="form-row-2">
+                <button type="button" class="btn-secondary" onclick="backToAuthStep1()">
+                  ← Corregir Datos
+                </button>
+                <button type="submit" class="btn-primary">
+                  🔓 Validar y Acceder a Módulos
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ======================================================================
+         PANTALLA DE ACCESO A MÓDULOS CONDICIONADA POR NIVEL (MODIFICACIÓN 2 Y 4)
+         - Región Y (Sede regional) -> Solo ve "Control de Licencias sin información digital"
+         - Sede Subregional -> Solo ve "Control de Licencias sin polígono digital" y "Carga de polígonos georreferenciados"
+         ====================================================================== -->
+    <section id="AuthenticatedWorkspace" class="workspace-container" style="display: none;">
+
+      <!-- ENCABEZADO CON INFORMACIÓN DE LA REGIÓN, SUBREGIÓN Y RESPONSABLE -->
+      <div class="session-banner">
+        <div class="session-user-info">
+          <div class="session-avatar" id="sessionAvatar">RI</div>
+          <div class="session-meta">
+            <h3 id="sessionTitleDisplay">Región I – Metropolitana · Subregión I-1</h3>
+            <p id="sessionUserDisplay">Responsable: — · Correo verificado: —</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button type="button" id="btnBackToModulesGrid" class="nav-pill" style="display: none;" onclick="closeActiveModuleView()">
+            ⬅️ Volver al Menú de Módulos
+          </button>
+          <button type="button" class="nav-pill" onclick="switchSubregionInSession()">
+            🔄 Cambiar Sede / Cerrar Sesión
+          </button>
+        </div>
+      </div>
+
+      <!-- TARJETAS DE MÓDULOS (MODIFICACIÓN 2: Mismo estilo de ilustración SVG en los 3 íconos y sin "Módulo X:" en el título) -->
+      <div id="modulesSelectionScreen">
+        <div class="modules-conditioned-grid">
+
+          <!-- EXCLUSIVO NIVEL REGIONAL: CONTROL DE LICENCIAS SIN INFORMACIÓN DIGITAL -->
+          <div id="cardModule1" class="module-portal-card">
+            <div>
+              <div class="module-card-top">
+                <!-- MODIFICACIÓN 2: Nuevo ícono SVG lineal que combina con los otros dos -->
+                <div class="module-icon-circle" style="background: rgba(23, 165, 137, 0.15); color: var(--c-pine);" aria-hidden="true">
+                  <svg width="32" height="32" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="7" y="4" width="22" height="28" rx="3" fill="rgba(23,165,137,0.2)" />
+                    <line x1="12" y1="11" x2="24" y2="11" />
+                    <line x1="12" y1="17" x2="20" y2="17" />
+                    <line x1="12" y1="23" x2="18" y2="23" />
+                    <polyline points="21,22 23,24 26,20" stroke="#1A5276" stroke-width="2.4" />
+                  </svg>
+                </div>
+                <span id="badgeModule1" class="status-pill available">🟢 Disponible para envío</span>
+              </div>
+              <h3>Control de Licencias sin información digital</h3>
+              <p>
+                Verificación de la emisión de licencias de aprovechamiento forestal identificadas por secuencia de correlativo que carecen de registro digital en las bases de datos institucionales.
+              </p>
+            </div>
+            <div class="module-card-footer">
+              <button type="button" id="btnOpenModule1" class="btn-primary" onclick="openModuleWorkspace(1)">
+                Abrir →
+              </button>
+            </div>
+          </div>
+
+          <!-- EXCLUSIVO NIVEL SUBREGIONAL: CONTROL DE LICENCIAS SIN POLÍGONO DIGITAL -->
+          <div id="cardModule2" class="module-portal-card">
+            <div>
+              <div class="module-card-top">
+                <div class="module-icon-circle" style="background: rgba(52, 152, 219, 0.15); color: var(--c-ocean);" aria-hidden="true">
+                  <svg width="32" height="32" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <polygon points="5,8 17,4 21,14 9,17" fill="rgba(52,152,219,0.22)" />
+                    <polygon points="23,9 32,14 28,26 19,21" fill="rgba(23,165,137,0.25)" />
+                    <polygon points="8,21 16,23 14,32 5,29" fill="rgba(124,179,66,0.28)" />
+                    <circle cx="5" cy="8" r="2" fill="currentColor" />
+                    <circle cx="17" cy="4" r="2" fill="currentColor" />
+                    <circle cx="21" cy="14" r="2" fill="currentColor" />
+                    <circle cx="32" cy="14" r="2" fill="currentColor" />
+                    <circle cx="28" cy="26" r="2" fill="currentColor" />
+                  </svg>
+                </div>
+                <span id="badgeModule2" class="status-pill available">🟢 Disponible para envío</span>
+              </div>
+              <h3>Control de Licencias sin polígono digital</h3>
+              <p>
+                Verificación de la disponibilidad física del expediente administrativo para licencias que cuentan con registro documental pero carecen de polígono georreferenciado en la capa vectorial institucional publicada.
+              </p>
+            </div>
+            <div class="module-card-footer">
+              <button type="button" id="btnOpenModule2" class="btn-primary" onclick="openModuleWorkspace(2)">
+                Abrir →
+              </button>
+            </div>
+          </div>
+
+          <!-- EXCLUSIVO NIVEL SUBREGIONAL: CARGA DE POLÍGONOS GEORREFERENCIADOS -->
+          <div id="cardModule3" class="module-portal-card">
+            <div>
+              <div class="module-card-top">
+                <div class="module-icon-circle" style="background: rgba(14, 98, 81, 0.15); color: var(--c-teal-dark);" aria-hidden="true">
+                  <svg width="34" height="34" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="2.1">
+                    <path d="M4 11a2 2 0 0 1 2-2h7l3 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V11z" fill="rgba(23,165,137,0.18)" />
+                    <path d="M13 24h10a3.5 3.5 0 0 0 .4-6.97A4.5 4.5 0 0 0 14.6 16 3.5 3.5 0 0 0 13 24z" fill="#FFFFFF" stroke="#1A5276" stroke-width="2" />
+                  </svg>
+                </div>
+                <span id="badgeModule3" class="status-pill available">🟢 Disponible para carga</span>
+              </div>
+              <h3>Carga de polígonos georreferenciados</h3>
+              <p>
+                Repositorio destinado a la exportación y remisión de las capas vectoriales disponibles en la subregión referentes a polígonos de licencias de aprovechamiento y obligaciones de repoblación forestal.
+              </p>
+            </div>
+            <div class="module-card-footer">
+              <button type="button" id="btnOpenModule3" class="btn-primary" onclick="openModuleWorkspace(3)">
+                Abrir →
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           VISTA INTERNA MÓDULO 1: ¿LA LICENCIA FUE EMITIDA? SÍ / NO
+           ==================================================================== -->
+      <div id="module1Container" class="panel-box" style="display: none;">
+        <div class="panel-box-header">
+          <div>
+            <h3>Control de Licencias sin información digital</h3>
+            <small style="color: var(--c-citron);">Indique obligatoriamente si cada licencia fue emitida (Sí / No) para habilitar el envío</small>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <input
+              type="search"
+              id="mod1SearchInput"
+              placeholder="🔍 Buscar año o correlativo..."
+              oninput="renderModule1Table()"
+              style="padding: 8px 12px; border-radius: 8px; border: 0; min-width: 220px;"
+            />
+            <button type="button" class="nav-pill" onclick="closeActiveModuleView()">
+              ← Volver a Módulos
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-box-body">
+          <div class="progress-toolbar">
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-labels">
+                <span id="mod1ProgressText">Avance: 0 de 0 licencias respondidas</span>
+                <span id="mod1ProgressPct">0%</span>
+              </div>
+              <div class="progress-track">
+                <div id="mod1ProgressFill" class="progress-fill" style="width: 0%;"></div>
+              </div>
+            </div>
+            <button type="button" class="btn-secondary" onclick="saveDraftToLocal(true)">
+              💾 Guardar Borrador Temporal
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="license-table">
+              <thead>
+                <tr>
+                  <th class="center" style="width: 70px;">No.</th>
+                  <th class="center" style="width: 100px;">Año</th>
+                  <th class="center" style="width: 190px;">Correlativo licencia</th>
+                  <th class="center" style="width: 280px;">¿La licencia fue emitida? *</th>
+                  <th>Observación</th>
+                </tr>
+              </thead>
+              <tbody id="mod1TableBody"></tbody>
+            </table>
+          </div>
+
+          <!-- VALIDACIÓN DE ENVÍO CON BLOQUEO SI FALTAN REGISTROS (MODIFICACIÓN 3) -->
+          <div class="validation-section">
+            <h3 style="margin: 0 0 6px; color: var(--c-pine);">Validación de envío</h3>
+            <p style="margin: 0; font-size: 0.88rem; color: var(--text-muted);">
+              Responsable autenticado: <strong id="secSummaryUserMod1"></strong>. Debe responder todos los registros de la tabla y firmar digitalmente para enviar la información.
+            </p>
+
+            <div class="validation-layout">
+              <div class="signature-only-card">
+                <h4>
+                  <span>✍️ Firma Digital del Responsable *</span>
+                  <button type="button" class="btn-secondary" style="padding: 5px 10px; font-size: 0.76rem;" onclick="clearSignatureCanvas('sigCanvasMod1')">
+                    Limpiar Firma
+                  </button>
+                </h4>
+                <div class="signature-canvas-wrap">
+                  <canvas id="sigCanvasMod1" width="560" height="195"></canvas>
+                </div>
+                <small style="color: var(--text-muted);">Dibuje su firma con el dedo (tablet/celular) o con el mouse.</small>
+              </div>
+
+              <div>
+                <div id="mod1CompletionWarning" class="completion-warning-hint"></div>
+                <button type="button" id="btnSubmitMod1" class="btn-primary" style="padding: 15px 32px; font-size: 1.02rem;" onclick="submitModule1Form()">
+                  Enviar información
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           VISTA INTERNA MÓDULO 2: CONTROL DE LICENCIAS SIN POLÍGONO DIGITAL
+           ==================================================================== -->
+      <div id="module2Container" class="panel-box" style="display: none;">
+        <div class="panel-box-header" style="background: linear-gradient(90deg, var(--c-ocean) 0%, var(--c-pine) 100%);">
+          <div>
+            <h3>Control de Licencias sin polígono digital</h3>
+            <small style="color: var(--c-citron);">Indique obligatoriamente el estado de disponibilidad del expediente físico en todos los registros</small>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <input
+              type="search"
+              id="mod2SearchInput"
+              placeholder="🔍 Buscar resolución, expediente o titular..."
+              oninput="renderModule2Table()"
+              style="padding: 8px 12px; border-radius: 8px; border: 0; min-width: 240px;"
+            />
+            <button type="button" class="nav-pill" onclick="closeActiveModuleView()">
+              ← Volver a Módulos
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-box-body">
+          <div class="progress-toolbar">
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-labels">
+                <span id="mod2ProgressText">Avance: 0 de 0 expedientes verificados</span>
+                <span id="mod2ProgressPct">0%</span>
+              </div>
+              <div class="progress-track">
+                <div id="mod2ProgressFill" class="progress-fill" style="width: 0%;"></div>
+              </div>
+            </div>
+            <button type="button" class="btn-secondary" onclick="saveDraftToLocal(true)">
+              💾 Guardar Borrador Temporal
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="license-table mod2-style">
+              <thead>
+                <tr>
+                  <th class="center" style="width: 55px;">No.</th>
+                  <th style="width: 145px;">Resolución Licencia</th>
+                  <th style="width: 130px;">Expediente</th>
+                  <th>Titular</th>
+                  <th class="center" style="width: 75px;">Año</th>
+                  <th class="center" style="width: 95px;">Área (Ha)</th>
+                  <th class="center" style="width: 340px;">Estado de disponibilidad del expediente físico *</th>
+                  <th style="width: 210px;">Observaciones</th>
+                </tr>
+              </thead>
+              <tbody id="mod2TableBody"></tbody>
+            </table>
+          </div>
+
+          <!-- VALIDACIÓN DE ENVÍO CON BLOQUEO SI FALTAN REGISTROS (MODIFICACIÓN 3) -->
+          <div class="validation-section">
+            <h3 style="margin: 0 0 6px; color: var(--c-pine);">Validación de envío</h3>
+            <p style="margin: 0; font-size: 0.88rem; color: var(--text-muted);">
+              Responsable autenticado: <strong id="secSummaryUserMod2"></strong>. Debe responder todos los registros de la tabla y firmar digitalmente para enviar la información.
+            </p>
+
+            <div class="validation-layout">
+              <div class="signature-only-card">
+                <h4>
+                  <span>✍️ Firma Digital del Responsable *</span>
+                  <button type="button" class="btn-secondary" style="padding: 5px 10px; font-size: 0.76rem;" onclick="clearSignatureCanvas('sigCanvasMod2')">
+                    Limpiar Firma
+                  </button>
+                </h4>
+                <div class="signature-canvas-wrap">
+                  <canvas id="sigCanvasMod2" width="560" height="195"></canvas>
+                </div>
+                <small style="color: var(--text-muted);">Dibuje su firma con el dedo (tablet/celular) o con el mouse.</small>
+              </div>
+
+              <div>
+                <div id="mod2CompletionWarning" class="completion-warning-hint"></div>
+                <button type="button" id="btnSubmitMod2" class="btn-primary" style="padding: 15px 32px; font-size: 1.02rem;" onclick="submitModule2Form()">
+                  Enviar información
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           VISTA INTERNA MÓDULO 3: CARGA DE POLÍGONOS GEORREFERENCIADOS
+           ==================================================================== -->
+      <div id="module3Container" class="panel-box" style="display: none;">
+        <div class="panel-box-header">
+          <div>
+            <h3>Carga de polígonos georreferenciados</h3>
+            <small style="color: var(--c-citron);">Subida directa a Google Drive de carpetas o archivos con los polígonos identificados por número de licencia</small>
+          </div>
+          <button type="button" class="nav-pill" onclick="closeActiveModuleView()">
+            ← Volver a Módulos
+          </button>
+        </div>
+
+        <div class="panel-box-body">
+          <div class="dropzone-area" onclick="document.getElementById('driveFilesInput').click()">
+            <div style="font-size: 2.6rem; margin-bottom: 8px;">☁️⬆️</div>
+            <h4 style="margin: 0 0 6px; color: var(--c-pine);">
+              Haga clic aquí para seleccionar carpetas comprimidas (.ZIP, .RAR) o archivos (.JSON, .GeoJSON, .SHP, .KML, .GPKG)
+            </h4>
+            <p style="margin: 0; font-size: 0.86rem; color: var(--text-muted);">
+              Se organizarán automáticamente en la carpeta de Google Drive de su Región y Subregión
+            </p>
+            <input type="file" id="driveFilesInput" multiple style="display: none;" onchange="handleDriveFilesSelected(event)" />
+          </div>
+
+          <div id="selectedFilesList" class="file-list-preview"></div>
+
+          <div class="field-group" style="margin-top: 16px;">
+            <label for="module3GeneralNotes">Observaciones o detalle del envío a Google Drive (Opcional)</label>
+            <textarea id="module3GeneralNotes" rows="2" placeholder="Ej. Se adjunta carpeta comprimida con polígonos identificados por número de licencia..."></textarea>
+          </div>
+
+          <div class="validation-section">
+            <h3 style="margin: 0 0 6px; color: var(--c-pine);">Validación de envío</h3>
+            <p style="margin: 0; font-size: 0.88rem; color: var(--text-muted);">
+              Responsable autenticado: <strong id="secSummaryUserMod3"></strong>. Para finalizar la carga y bloquear el envío, registre su <strong>Firma Digital</strong>.
+            </p>
+
+            <div class="validation-layout">
+              <div class="signature-only-card">
+                <h4>
+                  <span>✍️ Firma Digital del Responsable *</span>
+                  <button type="button" class="btn-secondary" style="padding: 5px 10px; font-size: 0.76rem;" onclick="clearSignatureCanvas('sigCanvasMod3')">
+                    Limpiar Firma
+                  </button>
+                </h4>
+                <div class="signature-canvas-wrap">
+                  <canvas id="sigCanvasMod3" width="560" height="195"></canvas>
+                </div>
+                <small style="color: var(--text-muted);">Dibuje su firma con el dedo o con el mouse.</small>
+              </div>
+
+              <div>
+                <div id="mod3CompletionWarning" class="completion-warning-hint"></div>
+                <button type="button" id="btnSubmitMod3" class="btn-primary" style="padding: 15px 32px; font-size: 1.02rem;" onclick="submitModule3Form()">
+                  Enviar información
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ========================================================================
+       VISTA 2: PANEL DE CONTROL Y AVANCE
+       ======================================================================== -->
+  <section id="viewAdmin" style="display: none;">
+    <div class="admin-workspace">
+
+      <aside class="admin-sidebar">
+        <div class="excel-top-box">
+          <div class="sidebar-section-title">Gestión de Datos (Excel)</div>
+
+          <div class="field-group">
+            <label for="adminExcelModuleFilter" style="color: #DCE775; font-size: 0.76rem;">
+              Módulo de Trabajo (Filtro Carga / Consolidado):
+            </label>
+            <select
+              id="adminExcelModuleFilter"
+              onchange="renderAdminDashboard()"
+              style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 0; font-weight: 700; font-size: 0.82rem; background: #FFFFFF; color: var(--c-charcoal);"
+            >
+              <option value="MOD1">Módulo 1: Sin información digital</option>
+              <option value="MOD2">Módulo 2: Sin polígono digital</option>
+            </select>
+          </div>
+
+          <button type="button" class="btn-primary" style="width: 100%; font-size: 0.82rem; padding: 10px;" onclick="document.getElementById('excelUploadInput').click()">
+            📥 Cargar Listados Excel (.xlsx)
+          </button>
+          <input type="file" id="excelUploadInput" accept=".xlsx,.xls,.csv" style="display: none;" onchange="handleImportExcelFile(event)" />
+
+          <button type="button" class="btn-secondary" style="width: 100%; font-size: 0.82rem; padding: 10px;" onclick="exportConsolidatedExcel()">
+            📤 Descargar Consolidado Excel
+          </button>
+
+          <button type="button" class="btn-secondary" style="width: 100%; font-size: 0.78rem; padding: 8px; border-color: rgba(255,255,255,0.4); background: transparent; color: #fff;" onclick="downloadExcelTemplate()">
+            📄 Descargar Plantilla (37 Hojas)
+          </button>
+        </div>
+
+        <div>
+          <div class="sidebar-section-title">Filtro por Año</div>
+          <select id="adminYearFilter" onchange="renderAdminDashboard()" style="width: 100%; padding: 9px 11px; border-radius: 8px; border: 0; font-weight: 700; background: #FFFFFF; color: var(--c-charcoal);">
+            <option value="ALL">Todos los años (Histórico)</option>
+            <option value="2015">Año 2015</option>
+            <option value="2016">Año 2016</option>
+            <option value="2017">Año 2017</option>
+            <option value="2018">Año 2018</option>
+            <option value="2019">Año 2019</option>
+            <option value="2020">Año 2020</option>
+          </select>
+        </div>
+
+        <div>
+          <div class="sidebar-section-title">Seleccione Región</div>
+          <div id="adminRegionFilterList" class="region-filter-list"></div>
+        </div>
+      </aside>
+
+      <div class="admin-main">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 20px;">
+          <div>
+            <h2 id="adminMainHeading" style="margin: 0; color: var(--c-charcoal); font-size: 1.6rem;">
+              Tablero de Control Nacional · Todas las Regiones
+            </h2>
+            <p id="adminMainSubheading" style="margin: 4px 0 0; color: var(--text-muted); font-size: 0.9rem;">
+              Monitoreo estadístico y control de envíos para los módulos del sistema
+            </p>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn-secondary" onclick="loadSampleSubmissionsForDemo()">
+              ✨ Simular Envíos de Ejemplo
+            </button>
+          </div>
+        </div>
+
+        <div class="kpi-grid" id="adminKpiGrid"></div>
+
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-card-head">
+              <h4 id="chartCatTitle">Métrica por Categoría</h4>
+              <span style="font-size: 0.78rem; color: var(--c-citron);">Conteo y %</span>
+            </div>
+            <div class="chart-card-body">
+              <div id="categoryBarsContainer" class="v-bar-chart"></div>
+              <div id="categoryLabelsContainer" class="v-bar-labels"></div>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-card-head">
+              <h4>Avance de Entrega por Sede (%)</h4>
+              <span style="font-size: 0.78rem; color: var(--c-citron);">Según nivel asignado</span>
+            </div>
+            <div class="chart-card-body">
+              <div id="subregionBarsContainer" class="v-bar-chart"></div>
+              <div id="subregionLabelsContainer" class="v-bar-labels"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-box">
+          <div class="panel-box-header">
+            <div>
+              <h3>Estado de cada Sede Regional y Subregional y Control de Desbloqueo</h3>
+              <small style="color: var(--c-citron);">
+                Sede Regional: Módulo 1 · Sedes Subregionales: Módulos 2 y 3
+              </small>
+            </div>
+          </div>
+          <div class="panel-box-body">
+            <div class="table-responsive">
+              <table class="license-table">
+                <thead>
+                  <tr>
+                    <th>Región</th>
+                    <th>Sede Regional / Subregional</th>
+                    <th class="center">Módulo 1: Sin Info Digital (Regional)</th>
+                    <th class="center">Módulo 2: Sin Polígono Digital (Subregional)</th>
+                    <th class="center">Módulo 3: Carga Polígonos (Subregional)</th>
+                    <th class="center">Acciones de Desbloqueo</th>
+                  </tr>
+                </thead>
+                <tbody id="adminSubregionStatusBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-box">
+          <div class="panel-box-header" style="background: linear-gradient(90deg, var(--c-charcoal), var(--c-slate));">
+            <div>
+              <h3>Historial de Envíos Recibidos, Firmas Digitales y Notificaciones</h3>
+              <small style="color: var(--c-lime);">
+                Los reenvíos se conservan en el historial. Solo el administrador puede eliminar un registro manualmente.
+              </small>
+            </div>
+          </div>
+          <div class="panel-box-body">
+            <div class="table-responsive">
+              <table class="license-table">
+                <thead>
+                  <tr>
+                    <th>Fecha y Hora</th>
+                    <th>Módulo</th>
+                    <th>Región / Sede</th>
+                    <th>Responsable (Puesto)</th>
+                    <th>Correo Verificado</th>
+                    <th class="center">Respaldo (Firma y Correo)</th>
+                    <th class="center">Control Manual</th>
+                  </tr>
+                </thead>
+                <tbody id="adminHistoryTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- MODAL DE INSPECCIÓN DE ENVÍO -->
+  <div id="submissionDetailModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modalSubmissionTitle">Detalle de Envío y Respaldo de Firma</h3>
+        <button type="button" class="nav-pill" onclick="closeSubmissionModal()">✕ Cerrar</button>
+      </div>
+      <div class="modal-body" id="modalSubmissionBody"></div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CONFIGURACIÓN GOOGLE DRIVE / SHEETS -->
+  <div id="cloudConfigModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>⚙️ Configuración de Conexión con Google Drive y Correo de Notificación</h3>
+        <button type="button" class="nav-pill" onclick="closeCloudConfigModal()">✕ Cerrar</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group" style="margin-bottom: 16px;">
+          <label for="gasWebhookUrlInput">URL de la Aplicación Web de Google Apps Script</label>
+          <input
+            type="url"
+            id="gasWebhookUrlInput"
+            placeholder="https://script.google.com/macros/s/AKfycb.../exec"
+          />
+        </div>
+
+        <div class="field-group" style="margin-bottom: 18px;">
+          <label for="adminNotifyEmailInput">Correo del Administrador (Recibe las notificaciones de cada envío)</label>
+          <input
+            type="email"
+            id="adminNotifyEmailInput"
+            placeholder="administrador@institucion.gob.gt"
+          />
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn-primary" onclick="saveCloudConfig()">
+            💾 Guardar Configuración
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
