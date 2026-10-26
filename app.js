@@ -221,8 +221,8 @@ function loadStateFromStorage() {
             ? parsed.cloudConfig.adminNotifyEmail
             : DEFAULT_ADMIN_EMAIL
         },
-        mod1Licenses: parsed.mod1Licenses && parsed.mod1Licenses.length ? parsed.mod1Licenses : getInitialMod1Licenses(),
-        mod2Licenses: parsed.mod2Licenses && parsed.mod2Licenses.length ? parsed.mod2Licenses : getInitialMod2Licenses()
+        mod1Licenses: Array.isArray(parsed.mod1Licenses) ? parsed.mod1Licenses : getInitialMod1Licenses(),
+        mod2Licenses: Array.isArray(parsed.mod2Licenses) ? parsed.mod2Licenses : getInitialMod2Licenses()
       };
       saveStateToStorage();
     } else {
@@ -1131,6 +1131,18 @@ function renderAdminDashboard() {
   const yearFilter = document.getElementById('adminYearFilter')?.value || 'ALL';
   const activeExcelMod = document.getElementById('adminExcelModuleFilter')?.value || 'MOD1';
 
+  const statusBadge = document.getElementById('excelLoadedStatusBadge');
+  if (statusBadge) {
+    const totalInMod = activeExcelMod === 'MOD1' ? appState.mod1Licenses.length : appState.mod2Licenses.length;
+    if (totalInMod > 0) {
+      statusBadge.innerHTML = `📊 Libro activo: <strong>${totalInMod} registros</strong> en ${activeExcelMod === 'MOD1' ? 'Módulo 1' : 'Módulo 2'}`;
+      statusBadge.style.color = '#DCE775';
+    } else {
+      statusBadge.innerHTML = `⚪ Sin libro cargado (0 registros en ${activeExcelMod === 'MOD1' ? 'Módulo 1' : 'Módulo 2'})`;
+      statusBadge.style.color = '#FFCCBC';
+    }
+  }
+
   const regionObj = REGIONS_CATALOG.find(r => r.id === regionFilter);
   document.getElementById('adminMainHeading').textContent = regionObj
     ? `Tablero de Control · ${regionObj.name}`
@@ -1431,7 +1443,6 @@ function closeSubmissionModal() {
 }
 
 function deleteSubmissionManually(submissionId) {
-  if (!window.confirm('¿Está segura de eliminar este registro de envío manualmente?')) return;
   appState.submissions = appState.submissions.filter(s => s.id !== submissionId);
   saveStateToStorage();
   renderAdminDashboard();
@@ -1521,13 +1532,45 @@ function handleImportExcelFile(event) {
 
       saveStateToStorage();
       renderAdminDashboard();
+      if (currentSession.authenticated) {
+        renderModule1Table();
+        renderModule2Table();
+      }
+      event.target.value = '';
       showToast(`📥 Se importaron ${importedRecords.length} registros desde ${workbook.SheetNames.length} hoja(s) para ${targetMod === 'MOD1' ? 'Módulo 1' : 'Módulo 2'}.`);
     } catch (err) {
       console.error(err);
+      event.target.value = '';
       showToast('❌ Error procesando el libro de Excel.');
     }
   };
   reader.readAsArrayBuffer(file);
+}
+
+function clearUploadedExcelModule() {
+  const targetMod = document.getElementById('adminExcelModuleFilter')?.value || 'MOD1';
+  const modLabel = targetMod === 'MOD1'
+    ? 'Módulo 1 (Sin información digital)'
+    : 'Módulo 2 (Sin polígono digital)';
+
+  const previousCount = targetMod === 'MOD1' ? appState.mod1Licenses.length : appState.mod2Licenses.length;
+
+  if (targetMod === 'MOD1') {
+    appState.mod1Licenses = [];
+  } else {
+    appState.mod2Licenses = [];
+  }
+
+  const fileInput = document.getElementById('excelUploadInput');
+  if (fileInput) fileInput.value = '';
+
+  saveStateToStorage();
+  renderAdminDashboard();
+  if (currentSession.authenticated) {
+    renderModule1Table();
+    renderModule2Table();
+  }
+  showToast(`🗑️ Se eliminaron los ${previousCount} registros cargados en ${modLabel}. Ahora está en 0.`);
 }
 
 function exportConsolidatedExcel() {
