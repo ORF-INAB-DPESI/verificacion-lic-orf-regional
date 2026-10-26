@@ -108,7 +108,7 @@
                 </div>
                 <div class="field-group">
                   <label for="loginRegionPass">Contraseña (Regional): *</label>
-                  <input type="password" id="loginRegionPass" placeholder="Ingrese su contraseña" value="forestal2026" required />
+                  <input type="password" id="loginRegionPass" placeholder="Ingrese su contraseña" required />
                 </div>
               </div>
 
@@ -139,10 +139,6 @@
                 📨 Enviar Código de Autenticación al Correo
               </button>
             </form>
-
-            <div id="adminLoginHintBox" class="admin-only-note">
-              <strong>🔑 Nota exclusiva para Administrador:</strong> Contraseña regional de prueba: <code>forestal2026</code>.
-            </div>
           </div>
 
           <!-- PASO 2: VALIDACIÓN DE CÓDIGO OTP -->
@@ -150,7 +146,6 @@
             <form id="loginStep2Form" class="form-grid" onsubmit="handleVerifyOtp(event)">
               <div style="padding: 12px 14px; border-radius: 9px; background: #EBF7F4; border-left: 4px solid var(--c-emerald); color: var(--c-pine); font-size: 0.86rem;">
                 Hemos enviado un código de autenticación de 6 dígitos a <strong id="otpTargetEmailDisplay"></strong>.
-                <div id="demoOtpCodeBanner" style="margin-top: 4px;"></div>
               </div>
 
               <div class="field-group">
@@ -603,11 +598,6 @@
             <p id="adminMainSubheading" style="margin: 4px 0 0; color: var(--text-muted); font-size: 0.9rem;">
               Monitoreo estadístico y control de envíos para los módulos del sistema
             </p>
-          </div>
-          <div style="display: flex; gap: 10px;">
-            <button type="button" class="btn-secondary" onclick="loadSampleSubmissionsForDemo()">
-              ✨ Simular Envíos de Ejemplo
-            </button>
           </div>
         </div>
 

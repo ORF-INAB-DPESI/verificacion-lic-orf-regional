@@ -3,125 +3,135 @@
    Incluye Modificaciones 1 y 2 completas + Sincronización con Google Drive / Sheets / Gmail
    ========================================================================== */
 
-const STORAGE_KEY = 'FORESTAL_ORF_STATE_V3';
+const STORAGE_KEY = 'FORESTAL_ORF_PROD_V4';
 
-// Listado oficial de las 10 Regiones y sus 37 Subregiones + "Región Y (Sede regional)"
+// Listado oficial de las 10 Regiones con su contraseña única y sus Subregiones oficiales
 const REGIONS_CATALOG = [
   {
     id: 'I',
     code: 'region1',
+    password: 'reg1_2026_inabMET',
     name: 'Región I – Metropolitana',
     subregions: [
       { id: 'REG-I', name: 'Región I (Sede regional)', isRegionalHQ: true },
-      { id: 'I-1', name: 'Subregión I-1 · Metropolitana' }
+      { id: 'I-1', name: 'I-1 Guatemala' }
     ]
   },
   {
     id: 'II',
     code: 'region2',
+    password: 'reg2_2026_inabAVIX',
     name: 'Región II – Alta Verapaz e Ixcán',
     subregions: [
       { id: 'REG-II', name: 'Región II (Sede regional)', isRegionalHQ: true },
-      { id: 'II-1', name: 'Subregión II-1 · Cobán' },
-      { id: 'II-2', name: 'Subregión II-2 · Tactic' },
-      { id: 'II-3', name: 'Subregión II-3 · San Pedro Carchá' },
-      { id: 'II-4', name: 'Subregión II-4 · Lanquín / Cahabón' },
-      { id: 'II-5', name: 'Subregión II-5 · Chisec' },
-      { id: 'II-6', name: 'Subregión II-6 · Fray Bartolomé de las Casas' },
-      { id: 'II-7', name: 'Subregión II-7 · Telemán / Panzós' },
-      { id: 'II-8', name: 'Subregión II-8 · Ixcán' }
+      { id: 'II-1', name: 'II-1 Santa Cruz Verapaz' },
+      { id: 'II-3', name: 'II-3 Cobán' },
+      { id: 'II-5', name: 'II-5 Fray Bartolomé de las Casas' },
+      { id: 'II-6', name: 'II-6 Ixcán' },
+      { id: 'II-7', name: 'II-7 Santa Catalina La Tinta' }
     ]
   },
   {
     id: 'III',
     code: 'region3',
+    password: 'reg3_NRT2026_inab',
     name: 'Región III – Nororiente',
     subregions: [
       { id: 'REG-III', name: 'Región III (Sede regional)', isRegionalHQ: true },
-      { id: 'III-1', name: 'Subregión III-1 · Zacapa / Gualán' },
-      { id: 'III-2', name: 'Subregión III-2 · Chiquimula' },
-      { id: 'III-3', name: 'Subregión III-3 · Puerto Barrios / Izabal' },
-      { id: 'III-4', name: 'Subregión III-4 · El Progreso / Guastatoya' }
+      { id: 'III-1', name: 'III-1 Izabal' },
+      { id: 'III-2', name: 'III-2 Zacapa' },
+      { id: 'III-3', name: 'III-3 Chiquimula' },
+      { id: 'III-4', name: 'III-4 El Progreso' }
     ]
   },
   {
     id: 'IV',
     code: 'region4',
+    password: 'reg4_2026SRT_inab',
     name: 'Región IV – Suroriente',
     subregions: [
       { id: 'REG-IV', name: 'Región IV (Sede regional)', isRegionalHQ: true },
-      { id: 'IV-1', name: 'Subregión IV-1 · Cuilapa / Santa Rosa' },
-      { id: 'IV-2', name: 'Subregión IV-2 · Jalapa' },
-      { id: 'IV-3', name: 'Subregión IV-3 · Jutiapa' }
+      { id: 'IV-1', name: 'IV-1 Jalapa' },
+      { id: 'IV-2', name: 'IV-2 Santa Rosa' },
+      { id: 'IV-3', name: 'IV-3 Jutiapa' }
     ]
   },
   {
     id: 'V',
     code: 'region5',
+    password: 'CHSACreg5_2026_inab',
     name: 'Región V – Chimaltenango y Sacatepéquez',
     subregions: [
       { id: 'REG-V', name: 'Región V (Sede regional)', isRegionalHQ: true },
-      { id: 'V-1', name: 'Subregión V-1 · Chimaltenango' },
-      { id: 'V-2', name: 'Subregión V-2 · Antigua Guatemala / Sacatepéquez' }
+      { id: 'V-1', name: 'V-1 Sacatepéquez' },
+      { id: 'V-2', name: 'V-2 Chimaltenango' }
     ]
   },
   {
     id: 'VI',
     code: 'region6',
+    password: 'reg6SCC_2026_inab',
     name: 'Región VI – Suroccidente',
     subregions: [
       { id: 'REG-VI', name: 'Región VI (Sede regional)', isRegionalHQ: true },
-      { id: 'VI-1', name: 'Subregión VI-1 · Quetzaltenango' },
-      { id: 'VI-2', name: 'Subregión VI-2 · San Marcos' },
-      { id: 'VI-3', name: 'Subregión VI-3 · Sololá' },
-      { id: 'VI-4', name: 'Subregión VI-4 · Totonicapán' },
-      { id: 'VI-5', name: 'Subregión VI-5 · Coatepeque' }
+      { id: 'VI-1', name: 'VI-1 Quetzaltenango' },
+      { id: 'VI-2', name: 'VI-2 San Marcos' },
+      { id: 'VI-3', name: 'VI-3 Totonicapán' },
+      { id: 'VI-4', name: 'VI-4 Sololá' },
+      { id: 'VI-5', name: 'VI-5 Tejutla' }
     ]
   },
   {
     id: 'VII',
     code: 'region7',
+    password: 'reg7_2026_NCCinab',
     name: 'Región VII – Noroccidente',
     subregions: [
       { id: 'REG-VII', name: 'Región VII (Sede regional)', isRegionalHQ: true },
-      { id: 'VII-1', name: 'Subregión VII-1 · Huehuetenango' },
-      { id: 'VII-2', name: 'Subregión VII-2 · Santa Cruz del Quiché' },
-      { id: 'VII-3', name: 'Subregión VII-3 · Nebaj' },
-      { id: 'VII-4', name: 'Subregión VII-4 · Nentón / Jacaltenango' }
+      { id: 'VII-1', name: 'VII-1 Santa Cruz del Quiché' },
+      { id: 'VII-2', name: 'VII-2 Huehuetenango' },
+      { id: 'VII-3', name: 'VII-3 Uspantán' },
+      { id: 'VII-4', name: 'VII-4 Soloma' },
+      { id: 'VII-5', name: 'VII-5 Santa Ana Huista' }
     ]
   },
   {
     id: 'VIII',
     code: 'region8',
+    password: 'reg8_2026_inabPTN',
     name: 'Región VIII – Petén',
     subregions: [
       { id: 'REG-VIII', name: 'Región VIII (Sede regional)', isRegionalHQ: true },
-      { id: 'VIII-1', name: 'Subregión VIII-1 · Flores / Santa Elena' },
-      { id: 'VIII-2', name: 'Subregión VIII-2 · Sayaxché' },
-      { id: 'VIII-3', name: 'Subregión VIII-3 · Poptún' },
-      { id: 'VIII-4', name: 'Subregión VIII-4 · La Libertad' },
-      { id: 'VIII-5', name: 'Subregión VIII-5 · Melchor de Mencos' }
+      { id: 'VIII-1', name: 'VIII-1 San Francisco' },
+      { id: 'VIII-2', name: 'VIII-2 Poptún' },
+      { id: 'VIII-3', name: 'VIII-3 Sayaxché' },
+      { id: 'VIII-4', name: 'VIII-4 La Libertad' },
+      { id: 'VIII-5', name: 'VIII-5 El Chal' }
     ]
   },
   {
     id: 'IX',
     code: 'region9',
+    password: 'reg9_CS2026_inab',
     name: 'Región IX – Costa Sur',
     subregions: [
       { id: 'REG-IX', name: 'Región IX (Sede regional)', isRegionalHQ: true },
-      { id: 'IX-1', name: 'Subregión IX-1 · Escuintla' },
-      { id: 'IX-2', name: 'Subregión IX-2 · Mazatenango / Suchitepéquez' },
-      { id: 'IX-3', name: 'Subregión IX-3 · Retalhuleu' }
+      { id: 'IX-1', name: 'IX-1 Mazatenango' },
+      { id: 'IX-2', name: 'IX-2 Escuintla' },
+      { id: 'IX-3', name: 'IX-3 Retalhuleu' },
+      { id: 'IX-4', name: 'IX-4 Coatepeque' }
     ]
   },
   {
     id: 'X',
     code: 'region10',
+    password: 'BVreg10_2026_inab',
     name: 'Región X – Baja Verapaz',
     subregions: [
       { id: 'REG-X', name: 'Región X (Sede regional)', isRegionalHQ: true },
-      { id: 'X-1', name: 'Subregión X-1 · Salamá' },
-      { id: 'X-2', name: 'Subregión X-2 · Rabinal / Cubulco' }
+      { id: 'X-1', name: 'X-1 San Jerónimo' },
+      { id: 'X-2', name: 'X-2 Rabinal' },
+      { id: 'X-3', name: 'X-3 Granados' }
     ]
   }
 ];
@@ -137,37 +147,13 @@ const MOD2_CATEGORIES = [
   { key: 'No disponible', label: 'No disponible', color: '#D84315', pillClass: 'pill-nodisp' }
 ];
 
+// Sin registros de prueba iniciales (listo para carga de archivos Excel reales)
 function getInitialMod1Licenses() {
-  return [
-    { id: 'M1-I1-01', regionId: 'I', subregionId: 'REG-I', no: 1, year: 2015, correlativo: '11', emitida: 'Sí', obs: '' },
-    { id: 'M1-I1-02', regionId: 'I', subregionId: 'REG-I', no: 2, year: 2016, correlativo: '23', emitida: '', obs: '' },
-    { id: 'M1-I1-03', regionId: 'I', subregionId: 'REG-I', no: 3, year: 2016, correlativo: '29', emitida: 'Sí', obs: '' },
-    { id: 'M1-I1-04', regionId: 'I', subregionId: 'REG-I', no: 4, year: 2017, correlativo: '6', emitida: 'No', obs: 'Correlativo anulado en libro físico' },
-    { id: 'M1-I1-05', regionId: 'I', subregionId: 'REG-I', no: 5, year: 2017, correlativo: '10', emitida: 'Sí', obs: '' },
-    { id: 'M1-I1-06', regionId: 'I', subregionId: 'REG-I', no: 6, year: 2017, correlativo: '20', emitida: 'Sí', obs: '' },
-    { id: 'M1-I1-07', regionId: 'I', subregionId: 'REG-I', no: 7, year: 2017, correlativo: '58', emitida: 'Sí', obs: '' },
-    { id: 'M1-I1-08', regionId: 'I', subregionId: 'REG-I', no: 8, year: 2017, correlativo: '86', emitida: 'No', obs: 'Error de secuencia en listado histórico' },
-    { id: 'M1-I1-09', regionId: 'I', subregionId: 'REG-I', no: 9, year: 2017, correlativo: '92', emitida: 'No', obs: 'Inexistente por error de digitación' },
-
-    { id: 'M1-II1-01', regionId: 'II', subregionId: 'REG-II', no: 1, year: 2016, correlativo: '14', emitida: 'Sí', obs: '' },
-    { id: 'M1-II1-02', regionId: 'II', subregionId: 'REG-II', no: 2, year: 2017, correlativo: '31', emitida: '', obs: '' },
-    { id: 'M1-III1-01', regionId: 'III', subregionId: 'REG-III', no: 1, year: 2016, correlativo: '08', emitida: 'Sí', obs: '' },
-    { id: 'M1-V1-01', regionId: 'V', subregionId: 'REG-V', no: 1, year: 2017, correlativo: '12', emitida: 'Sí', obs: '' },
-    { id: 'M1-VIII1-01', regionId: 'VIII', subregionId: 'REG-VIII', no: 1, year: 2018, correlativo: '05', emitida: 'No', obs: '' }
-  ];
+  return [];
 }
 
 function getInitialMod2Licenses() {
-  return [
-    { id: 'M2-I1-01', regionId: 'I', subregionId: 'I-1', no: 1, resolucion: 'RES-I-2015-011', expediente: 'EXP-2015-045', titular: 'Finca San Rafael S.A.', year: 2015, area: 14.5, disponibilidad: 'En Subregión', obs: 'Plano físico disponible en carpeta' },
-    { id: 'M2-I1-02', regionId: 'I', subregionId: 'I-1', no: 2, resolucion: 'RES-I-2016-023', expediente: 'EXP-2016-102', titular: 'Inversiones Bosques del Sur', year: 2016, area: 8.2, disponibilidad: 'En Región', obs: 'Remitido a sede regional para archivo' },
-    { id: 'M2-I1-03', regionId: 'I', subregionId: 'I-1', no: 3, resolucion: 'RES-I-2017-010', expediente: 'EXP-2017-019', titular: 'María Elena Castellanos', year: 2017, area: 11.4, disponibilidad: '', obs: '' },
-    { id: 'M2-I1-04', regionId: 'I', subregionId: 'I-1', no: 4, resolucion: 'RES-I-2017-020', expediente: 'EXP-2017-088', titular: 'Cooperativa El Ciprés R.L.', year: 2017, area: 31.8, disponibilidad: 'No disponible', obs: 'No obra plano con derrotero en archivo' },
-
-    { id: 'M2-II1-01', regionId: 'II', subregionId: 'II-1', no: 1, resolucion: 'RES-II-2016-014', expediente: 'EXP-2016-211', titular: 'Forestal Alta Verapaz S.A.', year: 2016, area: 45.0, disponibilidad: 'En Subregión', obs: '' },
-    { id: 'M2-II1-02', regionId: 'II', subregionId: 'II-1', no: 2, resolucion: 'RES-II-2017-031', expediente: 'EXP-2017-309', titular: 'Finca Santa Isabel', year: 2017, area: 18.6, disponibilidad: '', obs: '' },
-    { id: 'M2-III1-01', regionId: 'III', subregionId: 'III-1', no: 1, resolucion: 'RES-III-2016-008', expediente: 'EXP-2016-077', titular: 'Maderas del Motagua', year: 2016, area: 33.2, disponibilidad: 'En Subregión', obs: '' }
-  ];
+  return [];
 }
 
 const DEFAULT_GAS_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbzoYXapagGndZV7oJihMsAQliJNscOkA2-5JFph6yawuFLwFBL0XtofHOKPHSG5HSMhUA/exec';
@@ -283,13 +269,13 @@ function promptAdminUnlock() {
     return;
   }
 
-  const pass = window.prompt('Ingrese la clave de Administradora (por defecto: admin2026):', 'admin2026');
+  const pass = window.prompt('Ingrese la clave de Administrador:');
   if (pass === null) return;
-  if (pass.trim() === 'admin2026' || pass.trim() === 'forestal2026') {
+  if (pass.trim() === 'admin2026') {
     appState.adminUnlocked = true;
     saveStateToStorage();
     syncAdminVisibilityUI();
-    showToast('🔓 Controles de Administradora habilitados.');
+    showToast('🔓 Controles de Administrador habilitados.');
   } else {
     showToast('❌ Clave incorrecta.');
   }
@@ -297,16 +283,13 @@ function promptAdminUnlock() {
 
 function syncAdminVisibilityUI() {
   const nav = document.getElementById('adminTopNav');
-  const hint = document.getElementById('adminLoginHintBox');
   const btnLock = document.getElementById('btnAdminToggleLock');
 
   if (appState.adminUnlocked) {
     nav.classList.add('visible');
-    hint.classList.add('visible');
     btnLock.textContent = '🔓 Salir Modo Admin';
   } else {
     nav.classList.remove('visible');
-    hint.classList.remove('visible');
     btnLock.textContent = '🔒 Administrador';
   }
 }
@@ -381,15 +364,15 @@ async function handleRequestOtp(event) {
   const personRole = document.getElementById('loginPersonRole').value.trim();
   const personEmail = document.getElementById('loginPersonEmail').value.trim();
 
-  if (pass !== 'forestal2026') {
-    showToast('⚠️ Contraseña (Regional) incorrecta.');
-    return;
-  }
-
   const regionObj = REGIONS_CATALOG.find(r => r.id === regionId);
   const subObj = regionObj?.subregions.find(s => s.id === subregionId);
   if (!regionObj || !subObj) {
     showToast('⚠️ Seleccione su Región y Sede Subregional.');
+    return;
+  }
+
+  if (pass !== regionObj.password) {
+    showToast('⚠️ Contraseña (Regional) incorrecta para la región seleccionada.');
     return;
   }
 
@@ -437,9 +420,7 @@ async function handleRequestOtp(event) {
   document.getElementById('authStep2Body').style.display = 'block';
 
   document.getElementById('otpTargetEmailDisplay').textContent = personEmail;
-  document.getElementById('demoOtpCodeBanner').innerHTML =
-    `🔑 Código de verificación: <strong><code>${otpCode}</code></strong>`;
-  document.getElementById('otpInputCode').value = otpCode;
+  document.getElementById('otpInputCode').value = '';
 
   showToast(`📨 Código de verificación enviado a ${personEmail}`);
 }
