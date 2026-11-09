@@ -484,7 +484,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 .modules-conditioned-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 560px));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   justify-content: center;
   gap: 24px;
   margin-bottom: 28px;
