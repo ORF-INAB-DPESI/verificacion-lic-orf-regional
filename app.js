@@ -10,61 +10,61 @@ const REGIONS_CATALOG = [
   {
     id: 'I',
     code: 'region1',
-    password: 'reg1_2026_inabMET',
+    password: 'Reg1_2026_met',
     name: 'Región I – Metropolitana'
   },
   {
     id: 'II',
     code: 'region2',
-    password: 'reg2_2026_inabAVIX',
+    password: 'Reg2_2026_avi',
     name: 'Región II – Alta Verapaz e Ixcán'
   },
   {
     id: 'III',
     code: 'region3',
-    password: 'reg3_NRT2026_inab',
+    password: 'Reg3_2026_zac',
     name: 'Región III – Nororiente'
   },
   {
     id: 'IV',
     code: 'region4',
-    password: 'reg4_2026SRT_inab',
+    password: 'Reg4_2026_jut',
     name: 'Región IV – Suroriente'
   },
   {
     id: 'V',
     code: 'region5',
-    password: 'CHSACreg5_2026_inab',
+    password: 'Reg5_2026_ant',
     name: 'Región V – Chimaltenango y Sacatepéquez'
   },
   {
     id: 'VI',
     code: 'region6',
-    password: 'reg6SCC_2026_inab',
+    password: 'Reg6_2026_tot',
     name: 'Región VI – Suroccidente'
   },
   {
     id: 'VII',
     code: 'region7',
-    password: 'reg7_2026_NCCinab',
+    password: 'Reg7_2026_hue',
     name: 'Región VII – Noroccidente'
   },
   {
     id: 'VIII',
     code: 'region8',
-    password: 'reg8_2026_inabPTN',
+    password: 'Reg8_2026_chal',
     name: 'Región VIII – Petén'
   },
   {
     id: 'IX',
     code: 'region9',
-    password: 'reg9_CS2026_inab',
+    password: 'Reg9_2026_reu',
     name: 'Región IX – Costa Sur'
   },
   {
     id: 'X',
     code: 'region10',
-    password: 'BVreg10_2026_inab',
+    password: 'Reg10_2026_rab',
     name: 'Región X – Baja Verapaz'
   }
 ];
