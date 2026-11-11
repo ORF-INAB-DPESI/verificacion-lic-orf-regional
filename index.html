@@ -697,10 +697,29 @@
         <div class="panel-box">
           <div class="panel-box-header">
             <div>
-              <h3>Estado de cada Región y Control de Desbloqueo</h3>
+              <h3>Estado de cada Región, Desbloqueo y Limpieza de Registros</h3>
               <small style="color: var(--c-citron);">
-                Cada Región (I a X) tiene asignados los 3 módulos del sistema
+                Cada Región (I a X) tiene asignados los 3 módulos del sistema · Puede desbloquear módulos o limpiar respuestas de prueba
               </small>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button
+                type="button"
+                class="nav-pill"
+                onclick="syncStateFromGoogleCloud(true)"
+                title="Descargar los últimos envíos y avances guardados en Google Drive desde otros navegadores o computadoras"
+              >
+                🔄 Sincronizar Nube (Drive)
+              </button>
+              <button
+                type="button"
+                class="btn-danger"
+                style="padding: 8px 14px; font-size: 0.8rem; font-weight: 700;"
+                onclick="resetAllRegionsResponses()"
+                title="Borra todas las selecciones de prueba en todas las regiones, desbloquea los módulos y limpia el historial"
+              >
+                🧹 Reiniciar Todas las Pruebas (Dejar en Cero)
+              </button>
             </div>
           </div>
           <div class="panel-box-body">
@@ -712,7 +731,7 @@
                     <th class="center">Módulo 1: Sin Info Digital</th>
                     <th class="center">Módulo 2: Sin Polígono Digital</th>
                     <th class="center">Módulo 3: Carga Polígonos</th>
-                    <th class="center">Acciones de Desbloqueo</th>
+                    <th class="center">Acciones de Desbloqueo y Limpieza de Selecciones</th>
                   </tr>
                 </thead>
                 <tbody id="adminSubregionStatusBody"></tbody>
@@ -802,6 +821,6 @@
 
   <div id="toastContainer" class="toast-container"></div>
 
-  <script src="app.js?v=20261110_3"></script>
+  <script src="app.js?v=20261111_1"></script>
 </body>
 </html>

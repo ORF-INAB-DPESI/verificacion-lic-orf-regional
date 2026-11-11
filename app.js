@@ -236,6 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderAdminRegionSidebar();
   renderAdminDashboard();
   syncAdminVisibilityUI();
+  syncStateFromGoogleCloud(false);
 });
 
 function loadStateFromStorage() {
@@ -378,6 +379,7 @@ function switchMainView(viewName) {
     navAdminBtn.classList.add('active');
     renderAdminRegionSidebar();
     renderAdminDashboard();
+    syncStateFromGoogleCloud(false);
   } else {
     viewAdmin.style.display = 'none';
     viewPortal.style.display = 'block';
@@ -451,11 +453,13 @@ function handleRequestOtp(event) {
 
   refreshModulesCardsState();
   closeActiveModuleView();
+  syncStateFromGoogleCloud(false);
 
-  showToast(`✅ Bienvenido/a. Acceso habilitado para ${currentSession.regionName}.`);
+  showToast(`✅ Bienvenido/a. Acceso habilitado para ${currentSession.regionName} (sincronizado con la nube).`);
 }
 
 function switchRegionInSession() {
+  flushAutoCloudDraftSync();
   currentSession.authenticated = false;
   currentSession.activeModule = null;
   document.getElementById('AuthenticatedWorkspace').style.display = 'none';
@@ -502,6 +506,7 @@ function refreshModulesCardsState() {
 }
 
 function closeActiveModuleView() {
+  flushAutoCloudDraftSync();
   currentSession.activeModule = null;
   document.getElementById('modulesSelectionScreen').style.display = 'block';
   document.getElementById('btnBackToModulesGrid').style.display = 'none';
@@ -523,6 +528,7 @@ function openModuleWorkspace(modNumber) {
   if (modNumber === 1) renderModule1Table();
   if (modNumber === 2) renderModule2Table();
   if (modNumber === 3) updateModule3State();
+  syncStateFromGoogleCloud(false);
 }
 
 /* ==========================================================================
@@ -824,6 +830,7 @@ function handleSelectMod1Emitida(licId, val) {
     });
   }
   saveStateToStorage();
+  scheduleAutoCloudDraftSync(item.regionId);
   renderModule1Table();
 }
 
@@ -832,6 +839,7 @@ function handleUpdateMod1ExtraField(licId, fieldKey, val, shouldRerender) {
   if (!item) return;
   item[fieldKey] = val;
   saveStateToStorage();
+  scheduleAutoCloudDraftSync(item.regionId);
   if (shouldRerender) {
     renderModule1Table();
   } else {
@@ -848,6 +856,7 @@ function handleUpdateMod1Depto(licId, deptoVal) {
     item.municipio = '';
   }
   saveStateToStorage();
+  scheduleAutoCloudDraftSync(item.regionId);
   renderModule1Table();
 }
 
@@ -856,6 +865,7 @@ function handleUpdateMod1Obs(licId, val) {
   if (!item) return;
   item.obs = val;
   saveStateToStorage();
+  scheduleAutoCloudDraftSync(item.regionId);
 }
 
 function submitModule1Form() {
@@ -1068,6 +1078,7 @@ function handleSelectMod2Disponibilidad(licId, val) {
   if (!item) return;
   item.disponibilidad = val;
   saveStateToStorage();
+  scheduleAutoCloudDraftSync(item.regionId);
   renderModule2Table();
 }
 
@@ -1076,6 +1087,7 @@ function handleUpdateMod2Obs(licId, val) {
   if (!item) return;
   item.obs = val;
   saveStateToStorage();
+  scheduleAutoCloudDraftSync(item.regionId);
 }
 
 function submitModule2Form() {
@@ -1259,10 +1271,77 @@ function finalizeModuleSubmission({ modNumber, moduleTitle, signatureDataUrl, sn
   showToast(`✅ Información enviada correctamente. Se bloqueó el módulo para ${currentSession.regionName} y se emitieron las notificaciones.`);
 }
 
+const autoCloudDraftTimers = {};
+const lastLocalEditTimeByRegion = {};
+
+function pushRegionDraftToCloud(rId) {
+  if (!rId) return;
+  const m1Answered = appState.mod1Licenses
+    .filter(l => l.regionId === rId && (l.emitida || l.obs))
+    .map(l => {
+      const copy = { id: l.id, regionId: l.regionId, no: l.no, year: l.year, correlativo: l.correlativo, emitida: l.emitida, obs: l.obs };
+      MOD1_EXTRA_FIELD_KEYS.forEach(k => {
+        if (l[k]) copy[k] = l[k];
+      });
+      return copy;
+    });
+  const m2Answered = appState.mod2Licenses
+    .filter(l => l.regionId === rId && (l.disponibilidad || l.obs))
+    .map(l => ({
+      id: l.id,
+      regionId: l.regionId,
+      no: l.no,
+      resolucion: l.resolucion,
+      disponibilidad: l.disponibilidad,
+      obs: l.obs
+    }));
+  sendCloudCommand({
+    action: 'SAVE_DRAFT',
+    regionId: rId,
+    mod1Answers: m1Answered,
+    mod2Answers: m2Answered
+  });
+}
+
+function scheduleAutoCloudDraftSync(regionId) {
+  const rId = regionId || currentSession.regionId;
+  if (!rId) return;
+  lastLocalEditTimeByRegion[rId] = Date.now();
+  if (autoCloudDraftTimers[rId]) {
+    clearTimeout(autoCloudDraftTimers[rId]);
+  }
+  autoCloudDraftTimers[rId] = setTimeout(() => {
+    delete autoCloudDraftTimers[rId];
+    pushRegionDraftToCloud(rId);
+  }, 900);
+}
+
+function flushAutoCloudDraftSync() {
+  Object.keys(autoCloudDraftTimers).forEach(rId => {
+    clearTimeout(autoCloudDraftTimers[rId]);
+    delete autoCloudDraftTimers[rId];
+    pushRegionDraftToCloud(rId);
+  });
+}
+
+window.addEventListener('beforeunload', () => {
+  flushAutoCloudDraftSync();
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    flushAutoCloudDraftSync();
+  }
+});
+
 function saveDraftToLocal(notify = true) {
   saveStateToStorage();
+  if (currentSession.authenticated && currentSession.regionId) {
+    lastLocalEditTimeByRegion[currentSession.regionId] = Date.now();
+    pushRegionDraftToCloud(currentSession.regionId);
+  }
   if (notify) {
-    showToast('💾 Avance guardado correctamente. Puede cerrar sesión o continuar más tarde sin perder sus respuestas.');
+    showToast('☁️ Avance guardado en la nube (Google Drive). Puede abrir su sesión en cualquier otra computadora, teléfono o tablet y continuar donde se quedó.');
   }
 }
 
@@ -1542,20 +1621,26 @@ function renderSubregionTripleStatusTable(regionsList) {
 
   tbody.innerHTML = regionsList.map(reg => {
     const lk = getRegionLockState(reg.id);
+    const m1AnsweredCount = appState.mod1Licenses.filter(l => l.regionId === reg.id && (l.emitida || l.obs)).length;
+    const m2AnsweredCount = appState.mod2Licenses.filter(l => l.regionId === reg.id && (l.disponibilidad || l.obs)).length;
 
     const b1 = lk.mod1Locked
       ? `<span class="status-pill completed">🔒 Completado</span>`
+      : m1AnsweredCount > 0
+      ? `<span class="status-pill available">📝 En progreso (${m1AnsweredCount})</span>`
       : `<span class="status-pill available">⚪ Pendiente</span>`;
 
     const b2 = lk.mod2Locked
       ? `<span class="status-pill completed">🔒 Completado</span>`
+      : m2AnsweredCount > 0
+      ? `<span class="status-pill available">📝 En progreso (${m2AnsweredCount})</span>`
       : `<span class="status-pill available">⚪ Pendiente</span>`;
 
     const b3 = lk.mod3Locked
       ? `<span class="status-pill completed">🔒 Completado</span>`
       : `<span class="status-pill available">⚪ Pendiente</span>`;
 
-    const anyLocked = lk.mod1Locked || lk.mod2Locked || lk.mod3Locked;
+    const anyAction = lk.mod1Locked || lk.mod2Locked || lk.mod3Locked || m1AnsweredCount > 0 || m2AnsweredCount > 0;
 
     return `
       <tr>
@@ -1564,13 +1649,15 @@ function renderSubregionTripleStatusTable(regionsList) {
         <td class="center">${b2}</td>
         <td class="center">${b3}</td>
         <td class="center">
-          ${anyLocked ? `
+          ${anyAction ? `
             <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
               ${lk.mod1Locked ? `<button type="button" class="btn-warning" onclick="unlockRegionModule('${reg.id}', 1)">🔓 Desbloq. M1</button>` : ''}
               ${lk.mod2Locked ? `<button type="button" class="btn-warning" style="background:var(--c-ocean);" onclick="unlockRegionModule('${reg.id}', 2)">🔓 Desbloq. M2</button>` : ''}
               ${lk.mod3Locked ? `<button type="button" class="btn-warning" style="background:var(--c-teal-dark);" onclick="unlockRegionModule('${reg.id}', 3)">🔓 Desbloq. M3</button>` : ''}
+              ${m1AnsweredCount > 0 ? `<button type="button" class="btn-danger" style="padding:5px 9px;font-size:0.74rem;" onclick="clearRegionModuleResponses('${reg.id}', 1)" title="Borra todas las selecciones hechas en Módulo 1 para esta región">🧹 Limpiar M1 (${m1AnsweredCount})</button>` : ''}
+              ${m2AnsweredCount > 0 ? `<button type="button" class="btn-danger" style="padding:5px 9px;font-size:0.74rem;" onclick="clearRegionModuleResponses('${reg.id}', 2)" title="Borra todas las selecciones hechas en Módulo 2 para esta región">🧹 Limpiar M2 (${m2AnsweredCount})</button>` : ''}
             </div>
-          ` : `<small style="color:var(--text-muted);">Habilitada</small>`}
+          ` : `<small style="color:var(--text-muted);">Limpia / Habilitada</small>`}
         </td>
       </tr>
     `;
@@ -1584,6 +1671,11 @@ function unlockRegionModule(regionId, modNum) {
   if (modNum === 3) lk.mod3Locked = false;
 
   saveStateToStorage();
+  sendCloudCommand({
+    action: 'UNLOCK_MODULE',
+    regionId,
+    modNum
+  });
   renderAdminDashboard();
   if (currentSession.authenticated && currentSession.regionId === regionId) {
     refreshModulesCardsState();
@@ -1591,7 +1683,71 @@ function unlockRegionModule(regionId, modNum) {
     renderModule2Table();
     updateModule3State();
   }
-  showToast(`🔓 Módulo ${modNum} desbloqueado para Región ${regionId}. Los envíos anteriores se conservan en el historial.`);
+  showToast(`🔓 Módulo ${modNum} desbloqueado para Región ${regionId}.`);
+}
+
+function clearRegionModuleResponses(regionId, modNum) {
+  const lk = getRegionLockState(regionId);
+  if (modNum === 1) {
+    lk.mod1Locked = false;
+    appState.mod1Licenses.forEach(item => {
+      if (item.regionId === regionId) {
+        item.emitida = '';
+        item.obs = '';
+        MOD1_EXTRA_FIELD_KEYS.forEach(k => {
+          item[k] = '';
+        });
+      }
+    });
+  } else if (modNum === 2) {
+    lk.mod2Locked = false;
+    appState.mod2Licenses.forEach(item => {
+      if (item.regionId === regionId) {
+        item.disponibilidad = '';
+        item.obs = '';
+      }
+    });
+  }
+
+  saveStateToStorage();
+  sendCloudCommand({
+    action: 'CLEAR_REGION_MODULE',
+    regionId,
+    modNum
+  });
+  renderAdminDashboard();
+  if (currentSession.authenticated && currentSession.regionId === regionId) {
+    refreshModulesCardsState();
+    renderModule1Table();
+    renderModule2Table();
+  }
+  showToast(`🧹 Se limpiaron todas las selecciones del Módulo ${modNum} para la Región ${regionId}.`);
+}
+
+function resetAllRegionsResponses() {
+  if (!window.confirm('¿Está segura de reiniciar todas las pruebas? Esto dejará en blanco todas las selecciones de los Módulos 1 y 2 en las 10 regiones, desbloqueará todos los módulos y limpiará el historial de envíos de prueba.')) {
+    return;
+  }
+
+  appState.mod1Licenses = getInitialMod1Licenses();
+  appState.mod2Licenses = getInitialMod2Licenses();
+  appState.locks = {};
+  appState.submissions = [];
+  appState.mod1ClearedByAdmin = false;
+  appState.mod2ClearedByAdmin = false;
+
+  saveStateToStorage();
+  sendCloudCommand({
+    action: 'RESET_ALL_STATE'
+  });
+  renderAdminDashboard();
+  if (currentSession.authenticated) {
+    refreshModulesCardsState();
+    renderModule1Table();
+    renderModule2Table();
+    updateModule3State();
+  }
+  showToast('🧹 Sistema reiniciado por completo. Todas las regiones están limpias y listas para uso oficial.');
 }
 
 function renderSubmissionsHistoryTable(regionFilter) {
@@ -1678,6 +1834,10 @@ function closeSubmissionModal() {
 function deleteSubmissionManually(submissionId) {
   appState.submissions = appState.submissions.filter(s => s.id !== submissionId);
   saveStateToStorage();
+  sendCloudCommand({
+    action: 'DELETE_SUBMISSION',
+    submissionId
+  });
   renderAdminDashboard();
   showToast('🗑️ Registro eliminado manualmente.');
 }
@@ -2318,13 +2478,27 @@ function saveCloudConfig() {
   showToast('☁️ Configuración de Google Drive guardada.');
 }
 
+function sendCloudCommand(payloadObj) {
+  if (!appState.cloudConfig.gasWebhookUrl) return;
+  try {
+    fetch(appState.cloudConfig.gasWebhookUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payloadObj)
+    });
+  } catch (e) {
+    console.warn('Error enviando comando a GAS:', e);
+  }
+}
+
 function sendSubmissionToGoogleCloud(submissionRecord) {
   if (!appState.cloudConfig.gasWebhookUrl) return;
   try {
     fetch(appState.cloudConfig.gasWebhookUrl, {
       method: 'POST',
       mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
         action: 'SAVE_SUBMISSION',
         adminNotifyEmail: appState.cloudConfig.adminNotifyEmail,
@@ -2333,6 +2507,125 @@ function sendSubmissionToGoogleCloud(submissionRecord) {
     });
   } catch (e) {
     console.warn('Error sincronizando con GAS:', e);
+  }
+}
+
+async function syncStateFromGoogleCloud(notifyUser = false) {
+  if (!appState.cloudConfig.gasWebhookUrl) return;
+  try {
+    const url = `${appState.cloudConfig.gasWebhookUrl}?action=GET_CLOUD_STATE&t=${Date.now()}`;
+    const res = await fetch(url, { method: 'GET', cache: 'no-store' });
+    if (!res.ok) {
+      if (notifyUser) {
+        showToast('⚠️ Actualice el código Code.gs en Google Apps Script (Implementar → Gestionar implementaciones → Editar → Nueva versión) para activar la base de datos en la nube.');
+      }
+      return;
+    }
+    const data = await res.json();
+    if (!data || !data.ok || !data.cloudState) return;
+
+    const cs = data.cloudState;
+
+    // 1. Sincronizar bloqueos por región (la nube es la fuente de verdad)
+    const nextLocks = {};
+    REGIONS_CATALOG.forEach(reg => {
+      const rLock = (cs.locks && cs.locks[reg.id]) || {};
+      nextLocks[reg.id] = {
+        mod1Locked: Boolean(rLock.mod1Locked),
+        mod2Locked: Boolean(rLock.mod2Locked),
+        mod3Locked: Boolean(rLock.mod3Locked)
+      };
+    });
+    appState.locks = nextLocks;
+
+    // 2. Sincronizar historial de envíos desde la nube
+    if (Array.isArray(cs.submissions)) {
+      appState.submissions = cs.submissions;
+    }
+
+    // 3. Sincronizar respuestas de Módulo 1 por región desde la nube (DATABASE_ORF_CLOUD.json)
+    if (cs.mod1ByRegion && typeof cs.mod1ByRegion === 'object') {
+      const m1CloudMap = new Map();
+      Object.values(cs.mod1ByRegion).forEach(arr => {
+        if (Array.isArray(arr)) {
+          arr.forEach(item => {
+            const key = `${item.regionId}|${item.year}|${item.correlativo}`;
+            m1CloudMap.set(key, item);
+          });
+        }
+      });
+
+      const localM1Map = new Map();
+      appState.mod1Licenses.forEach(item => {
+        const key = `${item.regionId}|${item.year}|${item.correlativo}`;
+        localM1Map.set(key, item);
+      });
+
+      const baseM1 = getInitialMod1Licenses();
+      appState.mod1Licenses = baseM1.map(cleanItem => {
+        const rId = cleanItem.regionId;
+        const key = `${cleanItem.regionId}|${cleanItem.year}|${cleanItem.correlativo}`;
+        const isEditingRightNow = (Date.now() - (lastLocalEditTimeByRegion[rId] || 0)) < 4500 || Boolean(autoCloudDraftTimers[rId]);
+        if (isEditingRightNow) {
+          return localM1Map.get(key) || cleanItem;
+        }
+        const remoteItem = m1CloudMap.get(key);
+        return remoteItem ? { ...cleanItem, ...remoteItem, id: cleanItem.id } : cleanItem;
+      });
+    }
+
+    // 4. Sincronizar respuestas de Módulo 2 por región desde la nube (DATABASE_ORF_CLOUD.json)
+    if (cs.mod2ByRegion && typeof cs.mod2ByRegion === 'object') {
+      const m2CloudMap = new Map();
+      Object.values(cs.mod2ByRegion).forEach(arr => {
+        if (Array.isArray(arr)) {
+          arr.forEach(item => {
+            const key = `${item.regionId}|${item.no}|${item.resolucion}`;
+            m2CloudMap.set(key, item);
+          });
+        }
+      });
+
+      const localM2Map = new Map();
+      appState.mod2Licenses.forEach(item => {
+        const key = `${item.regionId}|${item.no}|${item.resolucion}`;
+        localM2Map.set(key, item);
+      });
+
+      const baseM2 = getInitialMod2Licenses();
+      appState.mod2Licenses = baseM2.map(cleanItem => {
+        const rId = cleanItem.regionId;
+        const key = `${cleanItem.regionId}|${cleanItem.no}|${cleanItem.resolucion}`;
+        const isEditingRightNow = (Date.now() - (lastLocalEditTimeByRegion[rId] || 0)) < 4500 || Boolean(autoCloudDraftTimers[rId]);
+        if (isEditingRightNow) {
+          return localM2Map.get(key) || cleanItem;
+        }
+        const remoteItem = m2CloudMap.get(key);
+        return remoteItem
+          ? {
+              ...cleanItem,
+              disponibilidad: remoteItem.disponibilidad || '',
+              obs: remoteItem.obs || ''
+            }
+          : cleanItem;
+      });
+    }
+
+    saveStateToStorage();
+    renderAdminDashboard();
+    if (currentSession.authenticated) {
+      refreshModulesCardsState();
+      if (currentSession.activeModule === 1) renderModule1Table();
+      if (currentSession.activeModule === 2) renderModule2Table();
+      if (currentSession.activeModule === 3) updateModule3State();
+    }
+    if (notifyUser) {
+      showToast('☁️ Sincronizado en tiempo real con la nube (Google Drive).');
+    }
+  } catch (e) {
+    if (notifyUser) {
+      showToast('⚠️ Falta publicar la Nueva Versión de Code.gs en Google Apps Script (Implementar → Gestionar implementaciones → Editar → Nueva versión).');
+    }
   }
 }
 
